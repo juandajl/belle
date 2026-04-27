@@ -1,0 +1,60 @@
+name: belle
+description: "Belle — Red social de moda con outfits y afiliados."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # Estado y navegación
+  flutter_riverpod: ^2.5.1
+  go_router: ^14.0.0
+
+  # Firebase
+  firebase_core: ^3.0.0
+  firebase_auth: ^5.0.0
+  cloud_firestore: ^5.0.0
+  firebase_storage: ^12.0.0
+
+  # Autenticación social
+  google_sign_in: ^6.2.1
+  sign_in_with_apple: ^6.1.0
+
+  # Media
+  cached_network_image: ^3.3.1
+  video_player: ^2.8.6
+  image_picker: ^1.0.7
+
+  # Networking
+  dio: ^5.4.3
+
+  # Modelos inmutables (anotaciones; generación va en dev_dependencies)
+  freezed_annotation: ^2.4.1
+  json_annotation: ^4.9.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^5.0.0
+
+  # Generación de código para Freezed / JSON
+  build_runner: ^2.4.11
+  freezed: ^2.5.2
+  json_serializable: ^6.8.0
+
+flutter:
+  uses-material-design: true
+  # assets:
+  #   - assets/images/
+  # fonts:
+  #   - family: Belle
+  #     fonts:
+  #       - asset: assets/fonts/Belle-Regular.ttf
