@@ -39,6 +39,9 @@ dependencies:
   freezed_annotation: ^2.4.1
   json_annotation: ^4.9.0
 
+  # Tipografía Belle (Montserrat + Inter via Google Fonts)
+  google_fonts: ^6.2.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

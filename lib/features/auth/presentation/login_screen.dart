@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/theme/app_theme.dart';
 import '../data/auth_repository.dart';
 import 'auth_providers.dart';
 
@@ -69,62 +71,50 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Scaffold(
+      backgroundColor: BelleColors.ivory,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
+          padding: const EdgeInsets.symmetric(horizontal: BelleSpacing.lg),
           child: Form(
             key: _formKey,
             child: ListView(
               children: [
                 const SizedBox(height: 64),
+                const BelleWordmark(fontSize: 44),
+                const SizedBox(height: BelleSpacing.sm),
                 Text(
-                  'Belle',
+                  _isSignUp
+                      ? 'Comienza tu historia'
+                      : 'Bienvenida de vuelta',
                   textAlign: TextAlign.center,
-                  style: theme.textTheme.displayMedium?.copyWith(
-                    fontWeight: FontWeight.w300,
-                    letterSpacing: 4,
-                    color: theme.colorScheme.primary,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: BelleColors.charcoalMuted,
+                    letterSpacing: 0.3,
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  _isSignUp ? 'Crea tu cuenta' : 'Bienvenida de vuelta',
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 48),
-                TextFormField(
+                const SizedBox(height: BelleSpacing.xxl),
+                _BelleTextField(
                   controller: _emailController,
+                  hint: 'Correo electrónico',
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(
-                    hintText: 'Correo electrónico',
-                    prefixIcon: Icon(Icons.email_outlined),
-                  ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
                       return 'Ingresa tu correo';
                     }
-                    if (!value.contains('@')) {
-                      return 'Correo no válido';
-                    }
+                    if (!value.contains('@')) return 'Correo no válido';
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
-                TextFormField(
+                const SizedBox(height: BelleSpacing.md),
+                _BelleTextField(
                   controller: _passwordController,
+                  hint: 'Contraseña',
                   obscureText: true,
                   textInputAction: TextInputAction.done,
-                  decoration: const InputDecoration(
-                    hintText: 'Contraseña',
-                    prefixIcon: Icon(Icons.lock_outline),
-                  ),
-                  onFieldSubmitted: (_) => _submit(),
+                  onSubmitted: (_) => _submit(),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Ingresa tu contraseña';
@@ -136,47 +126,36 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   },
                 ),
                 if (_error != null) ...[
-                  const SizedBox(height: 16),
+                  const SizedBox(height: BelleSpacing.md),
                   Text(
                     _error!,
-                    style: TextStyle(color: theme.colorScheme.error),
+                    style: const TextStyle(color: BelleColors.danger),
                     textAlign: TextAlign.center,
                   ),
                 ],
-                const SizedBox(height: 24),
+                const SizedBox(height: BelleSpacing.lg),
                 FilledButton(
                   onPressed: _loading ? null : _submit,
                   child: _loading
                       ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 1.5,
+                            color: BelleColors.ivory,
+                          ),
                         )
-                      : Text(_isSignUp ? 'Crear cuenta' : 'Ingresar'),
+                      : Text(_isSignUp ? 'CREAR CUENTA' : 'INGRESAR'),
                 ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    const Expanded(child: Divider()),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Text(
-                        'o',
-                        style: TextStyle(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                    const Expanded(child: Divider()),
-                  ],
-                ),
-                const SizedBox(height: 16),
+                const SizedBox(height: BelleSpacing.lg),
+                const _OrDivider(),
+                const SizedBox(height: BelleSpacing.lg),
                 OutlinedButton.icon(
                   onPressed: _loading ? null : _signInWithGoogle,
-                  icon: const Icon(Icons.g_mobiledata, size: 28),
-                  label: const Text('Continuar con Google'),
+                  icon: const _GoogleGlyph(),
+                  label: const Text('CONTINUAR CON GOOGLE'),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: BelleSpacing.xl),
                 Center(
                   child: TextButton(
                     onPressed: _loading
@@ -185,16 +164,121 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               _isSignUp = !_isSignUp;
                               _error = null;
                             }),
-                    child: Text(
-                      _isSignUp
-                          ? '¿Ya tienes cuenta? Ingresa'
-                          : '¿Eres nueva? Crea tu cuenta',
+                    child: Text.rich(
+                      TextSpan(
+                        text: _isSignUp
+                            ? '¿Ya tienes cuenta?  '
+                            : '¿Eres nueva?  ',
+                        style: GoogleFonts.inter(
+                          color: BelleColors.charcoalMuted,
+                          fontSize: 14,
+                        ),
+                        children: [
+                          TextSpan(
+                            text: _isSignUp ? 'Ingresa' : 'Crea tu cuenta',
+                            style: GoogleFonts.inter(
+                              color: BelleColors.charcoal,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BelleTextField extends StatelessWidget {
+  const _BelleTextField({
+    required this.controller,
+    required this.hint,
+    this.keyboardType,
+    this.textInputAction,
+    this.obscureText = false,
+    this.onSubmitted,
+    this.validator,
+  });
+
+  final TextEditingController controller;
+  final String hint;
+  final TextInputType? keyboardType;
+  final TextInputAction? textInputAction;
+  final bool obscureText;
+  final ValueChanged<String>? onSubmitted;
+  final String? Function(String?)? validator;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      textInputAction: textInputAction,
+      obscureText: obscureText,
+      onFieldSubmitted: onSubmitted,
+      validator: validator,
+      style: GoogleFonts.inter(
+        fontSize: 15,
+        color: BelleColors.charcoal,
+      ),
+      decoration: InputDecoration(hintText: hint),
+    );
+  }
+}
+
+class _OrDivider extends StatelessWidget {
+  const _OrDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        const Expanded(child: Divider()),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: BelleSpacing.md),
+          child: Text(
+            'O',
+            style: GoogleFonts.montserrat(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 3,
+              color: BelleColors.charcoalSubtle,
+            ),
+          ),
+        ),
+        const Expanded(child: Divider()),
+      ],
+    );
+  }
+}
+
+class _GoogleGlyph extends StatelessWidget {
+  const _GoogleGlyph();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 22,
+      height: 22,
+      alignment: Alignment.center,
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        color: BelleColors.ivory,
+      ),
+      child: Text(
+        'G',
+        style: GoogleFonts.montserrat(
+          fontSize: 16,
+          fontWeight: FontWeight.w700,
+          color: BelleColors.charcoal,
+          height: 1,
         ),
       ),
     );

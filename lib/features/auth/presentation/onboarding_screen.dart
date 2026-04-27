@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/theme/app_theme.dart';
 import '../domain/user_model.dart';
 import 'auth_providers.dart';
 
@@ -69,37 +71,48 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Completa tu perfil')),
+      backgroundColor: BelleColors.ivory,
+      appBar: AppBar(
+        title: const Text('PERFIL'),
+        leading: IconButton(
+          icon: const Icon(Icons.close, size: 22),
+          onPressed: () => ref.read(authRepositoryProvider).signOut(),
+          tooltip: 'Cerrar sesión',
+        ),
+      ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
+          padding: const EdgeInsets.symmetric(horizontal: BelleSpacing.lg),
           child: Form(
             key: _formKey,
             child: ListView(
               children: [
-                const SizedBox(height: 16),
+                const SizedBox(height: BelleSpacing.md),
                 Text(
-                  'Cuéntanos un poco sobre ti',
-                  style: theme.textTheme.headlineSmall,
+                  'Cuéntanos sobre ti',
+                  style: Theme.of(context).textTheme.headlineMedium,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: BelleSpacing.sm),
                 Text(
                   'Esto se mostrará en tu perfil público.',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: BelleColors.charcoalMuted,
                   ),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: BelleSpacing.xl),
                 TextFormField(
                   controller: _usernameController,
+                  textInputAction: TextInputAction.next,
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    color: BelleColors.charcoal,
+                  ),
                   decoration: const InputDecoration(
                     hintText: 'Nombre de usuario',
-                    prefixText: '@',
-                    prefixIcon: Icon(Icons.alternate_email),
+                    prefixText: '@  ',
                   ),
-                  textInputAction: TextInputAction.next,
                   validator: (value) {
                     final v = value?.trim() ?? '';
                     if (v.isEmpty) return 'Elige un username';
@@ -110,66 +123,65 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: BelleSpacing.md),
                 TextFormField(
                   controller: _bioController,
-                  decoration: const InputDecoration(
-                    hintText: 'Bio (opcional)',
-                    prefixIcon: Icon(Icons.edit_outlined),
-                  ),
                   maxLines: 3,
                   maxLength: 150,
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    color: BelleColors.charcoal,
+                  ),
+                  decoration: const InputDecoration(
+                    hintText: 'Bio (opcional)',
+                  ),
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  'Tipo de cuenta',
-                  style: theme.textTheme.labelLarge,
+                const SizedBox(height: BelleSpacing.md),
+                Padding(
+                  padding: const EdgeInsets.only(left: 4, bottom: 10),
+                  child: Text(
+                    'TIPO DE CUENTA',
+                    style: Theme.of(context).textTheme.labelMedium,
+                  ),
                 ),
-                const SizedBox(height: 8),
                 SegmentedButton<AccountType>(
                   segments: const [
                     ButtonSegment(
                       value: AccountType.personal,
-                      label: Text('Personal'),
-                      icon: Icon(Icons.person_outline),
+                      label: Text('PERSONAL'),
                     ),
                     ButtonSegment(
                       value: AccountType.business,
-                      label: Text('Empresa'),
-                      icon: Icon(Icons.storefront_outlined),
+                      label: Text('EMPRESA'),
                     ),
                   ],
                   selected: {_accountType},
+                  showSelectedIcon: false,
                   onSelectionChanged: (set) {
                     setState(() => _accountType = set.first);
                   },
                 ),
                 if (_error != null) ...[
-                  const SizedBox(height: 16),
+                  const SizedBox(height: BelleSpacing.md),
                   Text(
                     _error!,
-                    style: TextStyle(color: theme.colorScheme.error),
+                    style: const TextStyle(color: BelleColors.danger),
                     textAlign: TextAlign.center,
                   ),
                 ],
-                const SizedBox(height: 32),
+                const SizedBox(height: BelleSpacing.xl),
                 FilledButton(
                   onPressed: _loading ? null : _submit,
                   child: _loading
                       ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 1.5,
+                            color: BelleColors.ivory,
+                          ),
                         )
-                      : const Text('Continuar'),
-                ),
-                const SizedBox(height: 16),
-                TextButton(
-                  onPressed: _loading
-                      ? null
-                      : () =>
-                          ref.read(authRepositoryProvider).signOut(),
-                  child: const Text('Cerrar sesión'),
+                      : const Text('CONTINUAR'),
                 ),
               ],
             ),
