@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "190250686656",
+    "project_id": "belle-app-1ef26",
+    "storage_bucket": "belle-app-1ef26.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:190250686656:android:a65e3aab77bcbcd18c3525",
+        "android_client_info": {
+          "package_name": "com.belle.belle"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "190250686656-ju41nu26mf0b3grg3fv4fseos6eu1t3s.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBcCk87jZ_nODlJ9HEaiYY1E-FbqSflBDA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "190250686656-ju41nu26mf0b3grg3fv4fseos6eu1t3s.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
