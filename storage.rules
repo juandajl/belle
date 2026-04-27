@@ -1,0 +1,43 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+    function maxSize(mb) {
+      return request.resource.size < mb * 1024 * 1024;
+    }
+
+    // Imágenes de posts: posts/{userId}/{postId}/main.jpg
+    match /posts/{userId}/{postId}/{fileName} {
+      allow read: if isSignedIn();
+      allow write: if isOwner(userId) && isImage() && maxSize(8);
+    }
+
+    // Avatars de perfil: avatars/{userId}/avatar.jpg
+    match /avatars/{userId}/{fileName} {
+      allow read: if true;
+      allow write: if isOwner(userId) && isImage() && maxSize(4);
+    }
+
+    // Stories temporales: stories/{userId}/{storyId}/main.jpg
+    match /stories/{userId}/{storyId}/{fileName} {
+      allow read: if isSignedIn();
+      allow write: if isOwner(userId) && isImage() && maxSize(8);
+    }
+
+    // Por defecto: nada más es escribible.
+    match /{allPaths=**} {
+      allow read: if false;
+      allow write: if false;
+    }
+  }
+}

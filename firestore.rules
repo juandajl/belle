@@ -1,0 +1,115 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helpers ------------------------------------------------------------
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+    function isImmutable(field, after, before) {
+      return after[field] == before[field];
+    }
+
+    // Users -------------------------------------------------------------
+    match /users/{userId} {
+      // Cualquier usuario autenticado puede ver perfiles públicos.
+      allow read: if isSignedIn();
+
+      // Crear/actualizar/eliminar solo el propio doc.
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId)
+                    && isImmutable('uid', request.resource.data, resource.data)
+                    && isImmutable('createdAt', request.resource.data, resource.data);
+      allow delete: if isOwner(userId);
+    }
+
+    // Posts -------------------------------------------------------------
+    match /posts/{postId} {
+      allow read: if isSignedIn();
+
+      // Crear: solo el propio user puede ser autor del post.
+      allow create: if isSignedIn()
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.likesCount == 0
+                    && request.resource.data.commentsCount == 0
+                    && request.resource.data.savesCount == 0;
+
+      // Actualizar:
+      // - dueño puede editar caption/items/hashtags
+      // - cualquier autenticado puede modificar contadores (likesCount, etc.)
+      //   pero los demás campos deben permanecer iguales.
+      allow update: if isSignedIn() && (
+        // Caso 1: el dueño edita contenido propio
+        (resource.data.userId == request.auth.uid
+         && isImmutable('userId', request.resource.data, resource.data)
+         && isImmutable('createdAt', request.resource.data, resource.data))
+        ||
+        // Caso 2: alguien actualiza solo contadores (like/save/comment)
+        (request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['likesCount', 'savesCount', 'commentsCount']))
+      );
+
+      allow delete: if isOwner(resource.data.userId);
+
+      // Subcolección de likes: el like es del usuario autenticado.
+      match /likes/{likerId} {
+        allow read: if isSignedIn();
+        allow create, delete: if isOwner(likerId);
+      }
+
+      // Subcolección de saves: igual.
+      match /saves/{saverId} {
+        allow read: if isSignedIn();
+        allow create, delete: if isOwner(saverId);
+      }
+
+      // Comentarios: cualquier autenticado puede comentar; solo dueño edita/borra.
+      match /comments/{commentId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn()
+                      && request.resource.data.userId == request.auth.uid;
+        allow update, delete: if isSignedIn()
+                              && resource.data.userId == request.auth.uid;
+      }
+    }
+
+    // Stories (placeholder Fase 2/3) -----------------------------------
+    match /stories/{storyId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+                    && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isSignedIn()
+                            && resource.data.userId == request.auth.uid;
+    }
+
+    // Businesses (Fase 6) ----------------------------------------------
+    match /businesses/{businessId} {
+      allow read: if isSignedIn();
+      allow write: if isOwner(businessId);
+    }
+
+    // Referrals (Fase 3) -----------------------------------------------
+    match /referrals/{referralId} {
+      // Solo el dueño del referral puede leer/escribir su propio doc;
+      // los conteos públicos vienen denormalizados en /posts y /users.
+      allow read: if isSignedIn()
+                  && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn()
+                    && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isSignedIn()
+                            && resource.data.userId == request.auth.uid;
+    }
+
+    // Transactions (Fase 7) --------------------------------------------
+    match /transactions/{txId} {
+      // Solo lectura para el dueño; escritura siempre desde Cloud Functions.
+      allow read: if isSignedIn()
+                  && resource.data.userId == request.auth.uid;
+      allow write: if false;
+    }
+  }
+}
