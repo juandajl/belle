@@ -6,14 +6,44 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_theme.dart';
 import '../domain/post_model.dart';
 import 'feed_providers.dart';
+import 'widgets/post_actions.dart';
 import 'widgets/tag_dot.dart';
 
-class FeedScreen extends ConsumerWidget {
+class FeedScreen extends ConsumerStatefulWidget {
   const FeedScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final feedAsync = ref.watch(feedPostsProvider);
+  ConsumerState<FeedScreen> createState() => _FeedScreenState();
+}
+
+class _FeedScreenState extends ConsumerState<FeedScreen> {
+  final _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 240) {
+      ref.read(feedNotifierProvider.notifier).loadMore();
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController
+      ..removeListener(_onScroll)
+      ..dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final feedAsync = ref.watch(feedNotifierProvider);
 
     return Scaffold(
       backgroundColor: BelleColors.ivory,
@@ -32,15 +62,21 @@ class FeedScreen extends ConsumerWidget {
         data: (posts) {
           if (posts.isEmpty) return const _EmptyFeed();
           return RefreshIndicator(
-            onRefresh: () async => ref.refresh(feedPostsProvider.future),
+            onRefresh: () =>
+                ref.read(feedNotifierProvider.notifier).refresh(),
             color: BelleColors.charcoal,
             backgroundColor: BelleColors.ivory,
             child: ListView.separated(
+              controller: _scrollController,
               padding: const EdgeInsets.symmetric(vertical: BelleSpacing.md),
-              itemCount: posts.length,
+              itemCount: posts.length +
+                  (ref.read(feedNotifierProvider.notifier).hasMore ? 1 : 0),
               separatorBuilder: (_, __) =>
                   const SizedBox(height: BelleSpacing.lg),
-              itemBuilder: (_, i) => _PostCard(post: posts[i]),
+              itemBuilder: (_, i) {
+                if (i >= posts.length) return const _LoadingFooter();
+                return _PostCard(post: posts[i]);
+              },
             ),
           );
         },
@@ -49,13 +85,17 @@ class FeedScreen extends ConsumerWidget {
   }
 }
 
-class _PostCard extends StatelessWidget {
+class _PostCard extends ConsumerWidget {
   const _PostCard({required this.post});
 
   final PostModel post;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Usamos el stream del post para reflejar contadores en vivo.
+    final liveAsync = ref.watch(postStreamProvider(post.id));
+    final live = liveAsync.valueOrNull ?? post;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: BelleSpacing.md),
       child: Column(
@@ -68,10 +108,10 @@ class _PostCard extends StatelessWidget {
                 CircleAvatar(
                   radius: 18,
                   backgroundColor: BelleColors.rosePaleSoft,
-                  backgroundImage: post.authorPhotoUrl != null
-                      ? CachedNetworkImageProvider(post.authorPhotoUrl!)
+                  backgroundImage: live.authorPhotoUrl != null
+                      ? CachedNetworkImageProvider(live.authorPhotoUrl!)
                       : null,
-                  child: post.authorPhotoUrl == null
+                  child: live.authorPhotoUrl == null
                       ? const Icon(
                           Icons.person_outline,
                           size: 20,
@@ -81,7 +121,7 @@ class _PostCard extends StatelessWidget {
                 ),
                 const SizedBox(width: BelleSpacing.sm),
                 Text(
-                  '@${post.authorUsername ?? "usuario"}',
+                  '@${live.authorUsername ?? "usuario"}',
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ],
@@ -99,7 +139,7 @@ class _PostCard extends StatelessWidget {
                     fit: StackFit.expand,
                     children: [
                       CachedNetworkImage(
-                        imageUrl: post.mediaUrl,
+                        imageUrl: live.mediaUrl,
                         fit: BoxFit.cover,
                         placeholder: (_, __) => Container(
                           color: BelleColors.ivoryDeep,
@@ -113,7 +153,7 @@ class _PostCard extends StatelessWidget {
                           ),
                         ),
                       ),
-                      ...post.items.map(
+                      ...live.items.map(
                         (item) => Positioned(
                           left: item.x * w - 13,
                           top: item.y * h - 13,
@@ -128,14 +168,14 @@ class _PostCard extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: BelleSpacing.sm),
+          const SizedBox(height: 6),
           Row(
             children: [
-              const Icon(Icons.favorite_outline, size: 22),
-              const SizedBox(width: BelleSpacing.md),
-              const Icon(Icons.chat_bubble_outline, size: 22),
+              LikeButton(postId: live.id),
+              const SizedBox(width: BelleSpacing.sm),
+              const _IconButtonStub(icon: Icons.chat_bubble_outline),
               const Spacer(),
-              if (post.items.isNotEmpty)
+              if (live.items.isNotEmpty)
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: BelleSpacing.sm,
@@ -146,25 +186,27 @@ class _PostCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(BelleRadii.button),
                   ),
                   child: Text(
-                    '${post.items.length} prendas',
+                    '${live.items.length} prendas',
                     style: Theme.of(context).textTheme.labelMedium,
                   ),
                 ),
-              const SizedBox(width: BelleSpacing.sm),
-              const Icon(Icons.bookmark_outline, size: 22),
+              const SizedBox(width: BelleSpacing.xs),
+              SaveButton(postId: live.id),
             ],
           ),
-          if (post.likesCount > 0) ...[
-            const SizedBox(height: 6),
+          if (live.likesCount > 0) ...[
+            const SizedBox(height: 4),
             Text(
-              '${post.likesCount} me gusta',
+              live.likesCount == 1
+                  ? '1 me gusta'
+                  : '${live.likesCount} me gusta',
               style: Theme.of(context).textTheme.titleMedium,
             ),
           ],
-          if (post.caption != null) ...[
-            const SizedBox(height: 6),
+          if (live.caption != null) ...[
+            const SizedBox(height: 4),
             Text(
-              post.caption!,
+              live.caption!,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ],
@@ -251,6 +293,37 @@ class _PostCard extends StatelessWidget {
               ),
             SizedBox(height: MediaQuery.of(context).padding.bottom + 12),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _IconButtonStub extends StatelessWidget {
+  const _IconButtonStub({required this.icon});
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(BelleSpacing.xs),
+      child: Icon(icon, size: 22),
+    );
+  }
+}
+
+class _LoadingFooter extends StatelessWidget {
+  const _LoadingFooter();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: BelleSpacing.lg),
+      child: Center(
+        child: SizedBox(
+          width: 18,
+          height: 18,
+          child: CircularProgressIndicator(strokeWidth: 1.2),
         ),
       ),
     );

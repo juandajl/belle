@@ -156,6 +156,8 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
             caption: _captionController.text,
             items: _items,
           );
+      // Refrescar feed para que el nuevo post aparezca al volver.
+      await ref.read(feedNotifierProvider.notifier).refresh();
       if (!mounted) return;
       Navigator.of(context).pop();
     } catch (e) {
