@@ -45,5 +45,11 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Belle necesita acceso a la cámara para que puedas tomar fotos de tus outfits.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Belle necesita acceso a tu galería para que elijas fotos de tus outfits.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Belle puede guardar imágenes de outfits en tu galería.</string>
 </dict>
 </plist>

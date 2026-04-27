@@ -6,7 +6,7 @@ import '../../features/auth/presentation/auth_providers.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/onboarding_screen.dart';
 import '../../features/auth/presentation/splash_screen.dart';
-import '../../features/feed/presentation/home_screen.dart';
+import '../../features/feed/presentation/main_shell.dart';
 
 class AppRoutes {
   static const splash = '/splash';
@@ -75,7 +75,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.home,
-        builder: (_, __) => const HomeScreen(),
+        builder: (_, __) => const MainShell(),
       ),
     ],
   );
