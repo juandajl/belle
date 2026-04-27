@@ -63,7 +63,9 @@ class DefaultFirebaseOptions {
     messagingSenderId: '190250686656',
     projectId: 'belle-app-1ef26',
     storageBucket: 'belle-app-1ef26.firebasestorage.app',
+    androidClientId: '190250686656-9cqv6v3dqbjcn903vtnbc5fp4qb4e7l2.apps.googleusercontent.com',
     iosClientId: '190250686656-38b1k3po3sv0a759ur6o9hpb015vbqdf.apps.googleusercontent.com',
     iosBundleId: 'com.belle.belle',
   );
+
 }
