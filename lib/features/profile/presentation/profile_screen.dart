@@ -1,8 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/presentation/auth_providers.dart';
 import '../../feed/presentation/feed_providers.dart';
@@ -104,7 +106,10 @@ class ProfileScreen extends ConsumerWidget {
                       _Stats(
                         followers: user.followersCount,
                         following: user.followingCount,
+                        clicks: user.totalClicks,
                         earnings: user.totalEarnings,
+                        onEarningsTap: () =>
+                            context.push(AppRoutes.earnings),
                       ),
                       const SizedBox(height: BelleSpacing.lg),
                     ],
@@ -200,12 +205,16 @@ class _Stats extends StatelessWidget {
   const _Stats({
     required this.followers,
     required this.following,
+    required this.clicks,
     required this.earnings,
+    required this.onEarningsTap,
   });
 
   final int followers;
   final int following;
+  final int clicks;
   final double earnings;
+  final VoidCallback onEarningsTap;
 
   @override
   Widget build(BuildContext context) {
@@ -217,8 +226,10 @@ class _Stats extends StatelessWidget {
         _StatCell(value: '$following', label: 'SIGUIENDO'),
         _Divider(),
         _StatCell(
-          value: '\$${earnings.toStringAsFixed(0)}',
-          label: 'GANANCIAS',
+          value: '$clicks',
+          label: 'CLICKS',
+          onTap: onEarningsTap,
+          highlighted: true,
         ),
       ],
     );
@@ -226,17 +237,27 @@ class _Stats extends StatelessWidget {
 }
 
 class _StatCell extends StatelessWidget {
-  const _StatCell({required this.value, required this.label});
+  const _StatCell({
+    required this.value,
+    required this.label,
+    this.onTap,
+    this.highlighted = false,
+  });
+
   final String value;
   final String label;
+  final VoidCallback? onTap;
+  final bool highlighted;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    final content = Column(
       children: [
         Text(
           value,
-          style: Theme.of(context).textTheme.headlineSmall,
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                color: highlighted ? BelleColors.gold : BelleColors.charcoal,
+              ),
         ),
         const SizedBox(height: 4),
         Text(
@@ -244,6 +265,18 @@ class _StatCell extends StatelessWidget {
           style: Theme.of(context).textTheme.labelMedium,
         ),
       ],
+    );
+    if (onTap == null) return content;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(BelleRadii.small),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: BelleSpacing.sm,
+          vertical: BelleSpacing.xs,
+        ),
+        child: content,
+      ),
     );
   }
 }

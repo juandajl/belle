@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_theme.dart';
 import '../domain/post_model.dart';
 import 'feed_providers.dart';
+import 'widgets/item_detail_sheet.dart';
 import 'widgets/post_actions.dart';
 import 'widgets/tag_dot.dart';
 
@@ -158,7 +159,7 @@ class _PostCard extends ConsumerWidget {
                           left: item.x * w - 13,
                           top: item.y * h - 13,
                           child: TagDot(
-                            onTap: () => _showItemSheet(context, item),
+                            onTap: () => _showItemSheet(context, live, item),
                           ),
                         ),
                       ),
@@ -215,86 +216,15 @@ class _PostCard extends ConsumerWidget {
     );
   }
 
-  void _showItemSheet(BuildContext context, PostItem item) {
+  void _showItemSheet(
+    BuildContext context,
+    PostModel post,
+    PostItem item,
+  ) {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (_) => Container(
-        decoration: const BoxDecoration(
-          color: BelleColors.ivory,
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(BelleRadii.card),
-          ),
-        ),
-        padding: const EdgeInsets.all(BelleSpacing.lg),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: BelleColors.outline,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: BelleSpacing.md),
-            if (item.brand?.trim().isNotEmpty ?? false)
-              Text(
-                item.brand!.toUpperCase(),
-                style: Theme.of(context).textTheme.labelMedium,
-              ),
-            const SizedBox(height: 4),
-            Text(
-              item.name?.trim().isNotEmpty ?? false
-                  ? item.name!
-                  : 'Prenda etiquetada',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            if (item.price != null) ...[
-              const SizedBox(height: 4),
-              Text(
-                '${item.currency} ${item.price!.toStringAsFixed(0)}',
-                style: GoogleFonts.inter(
-                  fontSize: 18,
-                  color: BelleColors.charcoal,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-            const SizedBox(height: BelleSpacing.lg),
-            if (item.shopUrl?.trim().isNotEmpty ?? false)
-              FilledButton(
-                onPressed: () {},
-                child: const Text('VER EN TIENDA'),
-              )
-            else
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: BelleSpacing.md,
-                  vertical: BelleSpacing.sm,
-                ),
-                decoration: BoxDecoration(
-                  color: BelleColors.ivoryDeep,
-                  borderRadius: BorderRadius.circular(BelleRadii.small),
-                ),
-                child: Center(
-                  child: Text(
-                    'Sin enlace de tienda',
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
-                      color: BelleColors.charcoalMuted,
-                    ),
-                  ),
-                ),
-              ),
-            SizedBox(height: MediaQuery.of(context).padding.bottom + 12),
-          ],
-        ),
-      ),
+      builder: (_) => ItemDetailSheet(post: post, item: item),
     );
   }
 }

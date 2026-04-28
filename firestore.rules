@@ -19,12 +19,22 @@ service cloud.firestore {
       // Cualquier usuario autenticado puede ver perfiles públicos.
       allow read: if isSignedIn();
 
-      // Crear/actualizar/eliminar solo el propio doc.
+      // Crear/eliminar solo el propio doc.
       allow create: if isOwner(userId);
-      allow update: if isOwner(userId)
-                    && isImmutable('uid', request.resource.data, resource.data)
-                    && isImmutable('createdAt', request.resource.data, resource.data);
       allow delete: if isOwner(userId);
+
+      // Update:
+      //  - dueño puede editar su perfil (sin tocar uid/createdAt)
+      //  - cualquier autenticado puede incrementar contadores agregados
+      //    (totalClicks, totalEarnings, followersCount, followingCount).
+      allow update: if isSignedIn() && (
+        (isOwner(userId)
+         && isImmutable('createdAt', request.resource.data, resource.data))
+        ||
+        (request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['totalClicks', 'totalEarnings',
+                      'followersCount', 'followingCount']))
+      );
     }
 
     // Posts -------------------------------------------------------------
@@ -94,14 +104,20 @@ service cloud.firestore {
 
     // Referrals (Fase 3) -----------------------------------------------
     match /referrals/{referralId} {
-      // Solo el dueño del referral puede leer/escribir su propio doc;
-      // los conteos públicos vienen denormalizados en /posts y /users.
-      allow read: if isSignedIn()
-                  && resource.data.userId == request.auth.uid;
+      // Crear: cualquier autenticado puede registrar su propio click
+      //  (clickedByUserId == auth.uid). El referrerUserId es cualquier user.
       allow create: if isSignedIn()
-                    && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isSignedIn()
-                            && resource.data.userId == request.auth.uid;
+                    && request.resource.data.clickedByUserId == request.auth.uid
+                    && request.resource.data.converted == false
+                    && request.resource.data.earnings == 0;
+
+      // Leer: solo el dueño del referido (quien recibe el crédito).
+      allow read: if isSignedIn()
+                  && resource.data.referrerUserId == request.auth.uid;
+
+      // Las conversiones y ganancias se actualizan únicamente desde
+      // Cloud Functions (con Admin SDK que omite reglas).
+      allow update, delete: if false;
     }
 
     // Transactions (Fase 7) --------------------------------------------

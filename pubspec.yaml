@@ -35,6 +35,9 @@ dependencies:
   # Networking
   dio: ^5.4.3
 
+  # Abrir URLs externas (links de tienda en posts)
+  url_launcher: ^6.3.0
+
   # Modelos inmutables (anotaciones; generación va en dev_dependencies)
   freezed_annotation: ^2.4.1
   json_annotation: ^4.9.0

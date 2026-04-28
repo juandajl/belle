@@ -7,12 +7,14 @@ import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/onboarding_screen.dart';
 import '../../features/auth/presentation/splash_screen.dart';
 import '../../features/feed/presentation/main_shell.dart';
+import '../../features/referrals/presentation/earnings_screen.dart';
 
 class AppRoutes {
   static const splash = '/splash';
   static const login = '/login';
   static const onboarding = '/onboarding';
   static const home = '/';
+  static const earnings = '/earnings';
 }
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -52,7 +54,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         return goingTo == AppRoutes.onboarding ? null : AppRoutes.onboarding;
       }
 
-      // Sesión + onboarding completo: bloquear /login, /onboarding, /splash
+      // Sesión + onboarding completo: bloquear pantallas de auth.
       if (goingTo == AppRoutes.login ||
           goingTo == AppRoutes.onboarding ||
           goingTo == AppRoutes.splash) {
@@ -76,6 +78,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.home,
         builder: (_, __) => const MainShell(),
+      ),
+      GoRoute(
+        path: AppRoutes.earnings,
+        builder: (_, __) => const EarningsScreen(),
       ),
     ],
   );

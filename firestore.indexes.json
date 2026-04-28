@@ -15,6 +15,14 @@
         { "fieldPath": "hashtags", "arrayConfig": "CONTAINS" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "referrals",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "referrerUserId", "order": "ASCENDING" },
+        { "fieldPath": "clickedAt", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
