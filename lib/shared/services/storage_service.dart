@@ -31,4 +31,18 @@ class StorageService {
       if (e.code != 'object-not-found') rethrow;
     }
   }
+
+  /// Sube el avatar del usuario y devuelve la URL pública. Sobrescribe el
+  /// archivo anterior si existe (mismo path).
+  Future<String> uploadAvatar({
+    required String userId,
+    required File file,
+  }) async {
+    final ref = _storage.ref('avatars/$userId/avatar.jpg');
+    final task = await ref.putFile(
+      file,
+      SettableMetadata(contentType: 'image/jpeg'),
+    );
+    return task.ref.getDownloadURL();
+  }
 }

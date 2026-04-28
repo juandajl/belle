@@ -1,8 +1,13 @@
+import 'dart:io';
+
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../shared/services/storage_service.dart';
 import '../../auth/presentation/auth_providers.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
@@ -15,6 +20,10 @@ class EditProfileScreen extends ConsumerStatefulWidget {
 class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   late final TextEditingController _displayNameController;
   late final TextEditingController _bioController;
+  final _picker = ImagePicker();
+  final _storage = StorageService();
+
+  File? _newAvatarFile;
   bool _saving = false;
   String? _error;
 
@@ -35,6 +44,60 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     super.dispose();
   }
 
+  Future<void> _pickAvatar() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: BelleColors.ivory,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(BelleRadii.card),
+        ),
+      ),
+      builder: (sheetCtx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(BelleSpacing.md),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined),
+                title: Text(
+                  'Galería',
+                  style: GoogleFonts.inter(fontSize: 15),
+                ),
+                onTap: () {
+                  Navigator.of(sheetCtx).pop();
+                  _pick(ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_camera_outlined),
+                title: Text(
+                  'Cámara',
+                  style: GoogleFonts.inter(fontSize: 15),
+                ),
+                onTap: () {
+                  Navigator.of(sheetCtx).pop();
+                  _pick(ImageSource.camera);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pick(ImageSource source) async {
+    final picked = await _picker.pickImage(
+      source: source,
+      imageQuality: 85,
+      maxWidth: 720,
+    );
+    if (picked == null) return;
+    setState(() => _newAvatarFile = File(picked.path));
+  }
+
   Future<void> _save() async {
     final user = ref.read(currentUserProvider).valueOrNull;
     if (user == null) return;
@@ -43,10 +106,18 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       _error = null;
     });
     try {
+      String? newPhotoUrl;
+      if (_newAvatarFile != null) {
+        newPhotoUrl = await _storage.uploadAvatar(
+          userId: user.uid,
+          file: _newAvatarFile!,
+        );
+      }
       await ref.read(authRepositoryProvider).updateProfile(
             uid: user.uid,
             displayName: _displayNameController.text,
             bio: _bioController.text,
+            photoUrl: newPhotoUrl,
           );
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
@@ -58,6 +129,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final user = ref.watch(currentUserProvider).valueOrNull;
+
     return Scaffold(
       backgroundColor: BelleColors.ivory,
       appBar: AppBar(
@@ -85,6 +158,70 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       body: ListView(
         padding: const EdgeInsets.all(BelleSpacing.lg),
         children: [
+          Center(
+            child: GestureDetector(
+              onTap: _pickAvatar,
+              child: Stack(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: BelleColors.gold,
+                        width: 1.5,
+                      ),
+                    ),
+                    child: CircleAvatar(
+                      radius: 48,
+                      backgroundColor: BelleColors.rosePaleSoft,
+                      backgroundImage: _newAvatarFile != null
+                          ? FileImage(_newAvatarFile!) as ImageProvider
+                          : (user?.photoUrl != null
+                              ? CachedNetworkImageProvider(user!.photoUrl!)
+                              : null),
+                      child: _newAvatarFile == null && user?.photoUrl == null
+                          ? const Icon(
+                              Icons.person_outline,
+                              size: 44,
+                              color: BelleColors.charcoalMuted,
+                            )
+                          : null,
+                    ),
+                  ),
+                  Positioned(
+                    right: 0,
+                    bottom: 0,
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: BelleColors.charcoal,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: BelleColors.ivory,
+                          width: 2,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.camera_alt_outlined,
+                        size: 16,
+                        color: BelleColors.ivory,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: BelleSpacing.sm),
+          Center(
+            child: TextButton(
+              onPressed: _pickAvatar,
+              child: const Text('Cambiar foto'),
+            ),
+          ),
+          const SizedBox(height: BelleSpacing.lg),
           Padding(
             padding: const EdgeInsets.only(left: 4, bottom: 6),
             child: Text(

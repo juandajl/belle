@@ -138,6 +138,7 @@ class AuthRepository {
     required String uid,
     String? displayName,
     String? bio,
+    String? photoUrl,
   }) async {
     final updates = <String, dynamic>{};
     if (displayName != null) {
@@ -147,6 +148,9 @@ class AuthRepository {
     }
     if (bio != null) {
       updates['bio'] = bio.trim().isEmpty ? null : bio.trim();
+    }
+    if (photoUrl != null) {
+      updates['photoUrl'] = photoUrl.trim().isEmpty ? null : photoUrl.trim();
     }
     if (updates.isEmpty) return;
     await _usersCol.doc(uid).update(updates);
