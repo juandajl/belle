@@ -33,7 +33,9 @@ class FeedNotifier extends AsyncNotifier<List<PostModel>> {
   Future<void> refresh() async {
     _lastDoc = null;
     _hasMore = true;
-    state = const AsyncValue.loading();
+    // No seteamos loading explícitamente — así el ListView permanece montado
+    // y el RefreshIndicator anima el spinner correctamente hasta que llegue
+    // la nueva data.
     state = await AsyncValue.guard(() async {
       final result =
           await ref.read(postRepositoryProvider).fetchFeed(limit: _pageSize);
