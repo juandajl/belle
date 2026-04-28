@@ -4,8 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'package:url_launcher/url_launcher.dart';
+
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../shared/widgets/verified_badge.dart';
 import '../../auth/domain/user_model.dart';
 import '../../auth/presentation/auth_providers.dart';
 import '../../feed/presentation/feed_providers.dart';
@@ -141,9 +144,18 @@ class _ProfileBody extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: BelleSpacing.md),
-                  Text(
-                    '@${user.username ?? '...'}',
-                    style: Theme.of(context).textTheme.headlineSmall,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        '@${user.username ?? '...'}',
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      ),
+                      if (user.isBusiness) ...[
+                        const SizedBox(width: BelleSpacing.xs),
+                        const VerifiedBadge(size: 16),
+                      ],
+                    ],
                   ),
                   if (user.displayName != null) ...[
                     const SizedBox(height: BelleSpacing.xs),
@@ -167,6 +179,7 @@ class _ProfileBody extends StatelessWidget {
                       ),
                     ),
                   ],
+                  if (user.isBusiness) _BusinessInfo(user: user),
                   const SizedBox(height: BelleSpacing.lg),
                   _Stats(
                     followers: user.followersCount,
@@ -307,6 +320,71 @@ class _ProfileBody extends StatelessWidget {
           );
       ref.invalidate(feedNotifierProvider);
     } catch (_) {}
+  }
+}
+
+class _BusinessInfo extends StatelessWidget {
+  const _BusinessInfo({required this.user});
+  final UserModel user;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasCategory = user.category?.trim().isNotEmpty ?? false;
+    final hasWebsite = user.website?.trim().isNotEmpty ?? false;
+    if (!hasCategory && !hasWebsite) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(top: BelleSpacing.md),
+      child: Column(
+        children: [
+          if (hasCategory)
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: BelleSpacing.md,
+                vertical: 6,
+              ),
+              decoration: BoxDecoration(
+                color: BelleColors.rosePaleSoft,
+                borderRadius: BorderRadius.circular(BelleRadii.button),
+              ),
+              child: Text(
+                user.category!,
+                style: Theme.of(context).textTheme.labelMedium,
+              ),
+            ),
+          if (hasWebsite) ...[
+            const SizedBox(height: BelleSpacing.sm),
+            GestureDetector(
+              onTap: () async {
+                final uri = Uri.tryParse(user.website!);
+                if (uri == null) return;
+                await launchUrl(uri,
+                    mode: LaunchMode.externalApplication);
+              },
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.link,
+                    size: 16,
+                    color: BelleColors.charcoalMuted,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    user.website!.replaceAll(RegExp(r'^https?://'), ''),
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: BelleColors.charcoal,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }
 

@@ -118,11 +118,17 @@ class AuthRepository {
     required String username,
     required AccountType type,
     String? bio,
+    String? website,
+    String? category,
   }) async {
     await _usersCol.doc(uid).update({
       'username': username.trim().toLowerCase(),
       'type': type.name,
       if (bio != null) 'bio': bio.trim(),
+      if (website != null && website.trim().isNotEmpty)
+        'website': website.trim(),
+      if (category != null && category.trim().isNotEmpty)
+        'category': category.trim(),
     });
   }
 
@@ -139,6 +145,8 @@ class AuthRepository {
     String? displayName,
     String? bio,
     String? photoUrl,
+    String? website,
+    String? category,
   }) async {
     final updates = <String, dynamic>{};
     if (displayName != null) {
@@ -151,6 +159,12 @@ class AuthRepository {
     }
     if (photoUrl != null) {
       updates['photoUrl'] = photoUrl.trim().isEmpty ? null : photoUrl.trim();
+    }
+    if (website != null) {
+      updates['website'] = website.trim().isEmpty ? null : website.trim();
+    }
+    if (category != null) {
+      updates['category'] = category.trim().isEmpty ? null : category.trim();
     }
     if (updates.isEmpty) return;
     await _usersCol.doc(uid).update(updates);

@@ -17,6 +17,8 @@ class UserModel with _$UserModel {
     String? photoUrl,
     String? bio,
     @Default(AccountType.personal) AccountType type,
+    String? website,
+    String? category,
     @Default(0) int followersCount,
     @Default(0) int followingCount,
     @Default(0) double totalEarnings,
@@ -37,6 +39,8 @@ class UserModel with _$UserModel {
       type: AccountType.values.byName(
         data['type'] as String? ?? AccountType.personal.name,
       ),
+      website: data['website'] as String?,
+      category: data['category'] as String?,
       followersCount: data['followersCount'] as int? ?? 0,
       followingCount: data['followingCount'] as int? ?? 0,
       totalEarnings: (data['totalEarnings'] as num?)?.toDouble() ?? 0,
@@ -53,6 +57,8 @@ class UserModel with _$UserModel {
         'photoUrl': photoUrl,
         'bio': bio,
         'type': type.name,
+        'website': website,
+        'category': category,
         'followersCount': followersCount,
         'followingCount': followingCount,
         'totalEarnings': totalEarnings,
@@ -60,6 +66,8 @@ class UserModel with _$UserModel {
         'referralCode': referralCode,
         'createdAt': Timestamp.fromDate(createdAt),
       };
+
+  bool get isBusiness => type == AccountType.business;
 
   bool get hasCompletedOnboarding =>
       username != null && username!.trim().isNotEmpty;

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../shared/widgets/verified_badge.dart';
 import '../domain/user_model.dart';
 import 'auth_providers.dart';
 
@@ -17,7 +18,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _bioController = TextEditingController();
+  final _websiteController = TextEditingController();
+
   AccountType _accountType = AccountType.personal;
+  String? _category;
   bool _loading = false;
   String? _error;
 
@@ -25,6 +29,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   void dispose() {
     _usernameController.dispose();
     _bioController.dispose();
+    _websiteController.dispose();
     super.dispose();
   }
 
@@ -61,6 +66,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         username: _usernameController.text,
         type: _accountType,
         bio: _bioController.text.isEmpty ? null : _bioController.text,
+        website: _accountType == AccountType.business
+            ? _websiteController.text
+            : null,
+        category:
+            _accountType == AccountType.business ? _category : null,
       );
     } catch (e) {
       setState(() => _error = 'Error guardando perfil: $e');
@@ -71,6 +81,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isBusiness = _accountType == AccountType.business;
+
     return Scaffold(
       backgroundColor: BelleColors.ivory,
       appBar: AppBar(
@@ -90,7 +102,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               children: [
                 const SizedBox(height: BelleSpacing.md),
                 Text(
-                  'Cuéntanos sobre ti',
+                  isBusiness ? 'Cuéntanos sobre tu marca' : 'Cuéntanos sobre ti',
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
                 const SizedBox(height: BelleSpacing.sm),
@@ -102,41 +114,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   ),
                 ),
                 const SizedBox(height: BelleSpacing.xl),
-                TextFormField(
-                  controller: _usernameController,
-                  textInputAction: TextInputAction.next,
-                  style: GoogleFonts.inter(
-                    fontSize: 15,
-                    color: BelleColors.charcoal,
-                  ),
-                  decoration: const InputDecoration(
-                    hintText: 'Nombre de usuario',
-                    prefixText: '@  ',
-                  ),
-                  validator: (value) {
-                    final v = value?.trim() ?? '';
-                    if (v.isEmpty) return 'Elige un username';
-                    if (v.length < 3) return 'Mínimo 3 caracteres';
-                    if (!RegExp(r'^[a-zA-Z0-9_.]+$').hasMatch(v)) {
-                      return 'Solo letras, números, "_" y "."';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: BelleSpacing.md),
-                TextFormField(
-                  controller: _bioController,
-                  maxLines: 3,
-                  maxLength: 150,
-                  style: GoogleFonts.inter(
-                    fontSize: 15,
-                    color: BelleColors.charcoal,
-                  ),
-                  decoration: const InputDecoration(
-                    hintText: 'Bio (opcional)',
-                  ),
-                ),
-                const SizedBox(height: BelleSpacing.md),
                 Padding(
                   padding: const EdgeInsets.only(left: 4, bottom: 10),
                   child: Text(
@@ -161,6 +138,89 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     setState(() => _accountType = set.first);
                   },
                 ),
+                const SizedBox(height: BelleSpacing.lg),
+                TextFormField(
+                  controller: _usernameController,
+                  textInputAction: TextInputAction.next,
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    color: BelleColors.charcoal,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: isBusiness
+                        ? 'Nombre de la marca (sin espacios)'
+                        : 'Nombre de usuario',
+                    prefixText: '@  ',
+                  ),
+                  validator: (value) {
+                    final v = value?.trim() ?? '';
+                    if (v.isEmpty) return 'Elige un username';
+                    if (v.length < 3) return 'Mínimo 3 caracteres';
+                    if (!RegExp(r'^[a-zA-Z0-9_.]+$').hasMatch(v)) {
+                      return 'Solo letras, números, "_" y "."';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: BelleSpacing.md),
+                TextFormField(
+                  controller: _bioController,
+                  maxLines: 3,
+                  maxLength: 150,
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    color: BelleColors.charcoal,
+                  ),
+                  decoration: InputDecoration(
+                    hintText:
+                        isBusiness ? 'Descripción de la marca' : 'Bio (opcional)',
+                  ),
+                ),
+                if (isBusiness) ...[
+                  const SizedBox(height: BelleSpacing.md),
+                  TextFormField(
+                    controller: _websiteController,
+                    keyboardType: TextInputType.url,
+                    textInputAction: TextInputAction.next,
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      color: BelleColors.charcoal,
+                    ),
+                    decoration: const InputDecoration(
+                      hintText: 'Sitio web (https://...)',
+                      prefixIcon: Icon(Icons.link, size: 20),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Ingresa el sitio web';
+                      }
+                      final uri = Uri.tryParse(value.trim());
+                      if (uri == null || !uri.hasScheme) {
+                        return 'URL no válida';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: BelleSpacing.md),
+                  DropdownButtonFormField<String>(
+                    initialValue: _category,
+                    items: BusinessCategories.all
+                        .map((c) =>
+                            DropdownMenuItem(value: c, child: Text(c)))
+                        .toList(),
+                    onChanged: (v) => setState(() => _category = v),
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      color: BelleColors.charcoal,
+                    ),
+                    decoration: const InputDecoration(
+                      hintText: 'Categoría',
+                      prefixIcon: Icon(Icons.label_outline, size: 20),
+                    ),
+                    validator: (value) =>
+                        value == null ? 'Elige una categoría' : null,
+                  ),
+                ],
                 if (_error != null) ...[
                   const SizedBox(height: BelleSpacing.md),
                   Text(

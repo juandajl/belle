@@ -24,6 +24,8 @@ mixin _$UserModel {
   String? get photoUrl => throw _privateConstructorUsedError;
   String? get bio => throw _privateConstructorUsedError;
   AccountType get type => throw _privateConstructorUsedError;
+  String? get website => throw _privateConstructorUsedError;
+  String? get category => throw _privateConstructorUsedError;
   int get followersCount => throw _privateConstructorUsedError;
   int get followingCount => throw _privateConstructorUsedError;
   double get totalEarnings => throw _privateConstructorUsedError;
@@ -51,6 +53,8 @@ abstract class $UserModelCopyWith<$Res> {
     String? photoUrl,
     String? bio,
     AccountType type,
+    String? website,
+    String? category,
     int followersCount,
     int followingCount,
     double totalEarnings,
@@ -82,6 +86,8 @@ class _$UserModelCopyWithImpl<$Res, $Val extends UserModel>
     Object? photoUrl = freezed,
     Object? bio = freezed,
     Object? type = null,
+    Object? website = freezed,
+    Object? category = freezed,
     Object? followersCount = null,
     Object? followingCount = null,
     Object? totalEarnings = null,
@@ -119,6 +125,14 @@ class _$UserModelCopyWithImpl<$Res, $Val extends UserModel>
                 ? _value.type
                 : type // ignore: cast_nullable_to_non_nullable
                       as AccountType,
+            website: freezed == website
+                ? _value.website
+                : website // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            category: freezed == category
+                ? _value.category
+                : category // ignore: cast_nullable_to_non_nullable
+                      as String?,
             followersCount: null == followersCount
                 ? _value.followersCount
                 : followersCount // ignore: cast_nullable_to_non_nullable
@@ -166,6 +180,8 @@ abstract class _$$UserModelImplCopyWith<$Res>
     String? photoUrl,
     String? bio,
     AccountType type,
+    String? website,
+    String? category,
     int followersCount,
     int followingCount,
     double totalEarnings,
@@ -196,6 +212,8 @@ class __$$UserModelImplCopyWithImpl<$Res>
     Object? photoUrl = freezed,
     Object? bio = freezed,
     Object? type = null,
+    Object? website = freezed,
+    Object? category = freezed,
     Object? followersCount = null,
     Object? followingCount = null,
     Object? totalEarnings = null,
@@ -233,6 +251,14 @@ class __$$UserModelImplCopyWithImpl<$Res>
             ? _value.type
             : type // ignore: cast_nullable_to_non_nullable
                   as AccountType,
+        website: freezed == website
+            ? _value.website
+            : website // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        category: freezed == category
+            ? _value.category
+            : category // ignore: cast_nullable_to_non_nullable
+                  as String?,
         followersCount: null == followersCount
             ? _value.followersCount
             : followersCount // ignore: cast_nullable_to_non_nullable
@@ -273,6 +299,8 @@ class _$UserModelImpl extends _UserModel {
     this.photoUrl,
     this.bio,
     this.type = AccountType.personal,
+    this.website,
+    this.category,
     this.followersCount = 0,
     this.followingCount = 0,
     this.totalEarnings = 0,
@@ -297,6 +325,10 @@ class _$UserModelImpl extends _UserModel {
   @JsonKey()
   final AccountType type;
   @override
+  final String? website;
+  @override
+  final String? category;
+  @override
   @JsonKey()
   final int followersCount;
   @override
@@ -315,7 +347,7 @@ class _$UserModelImpl extends _UserModel {
 
   @override
   String toString() {
-    return 'UserModel(uid: $uid, email: $email, displayName: $displayName, username: $username, photoUrl: $photoUrl, bio: $bio, type: $type, followersCount: $followersCount, followingCount: $followingCount, totalEarnings: $totalEarnings, totalClicks: $totalClicks, referralCode: $referralCode, createdAt: $createdAt)';
+    return 'UserModel(uid: $uid, email: $email, displayName: $displayName, username: $username, photoUrl: $photoUrl, bio: $bio, type: $type, website: $website, category: $category, followersCount: $followersCount, followingCount: $followingCount, totalEarnings: $totalEarnings, totalClicks: $totalClicks, referralCode: $referralCode, createdAt: $createdAt)';
   }
 
   @override
@@ -333,6 +365,9 @@ class _$UserModelImpl extends _UserModel {
                 other.photoUrl == photoUrl) &&
             (identical(other.bio, bio) || other.bio == bio) &&
             (identical(other.type, type) || other.type == type) &&
+            (identical(other.website, website) || other.website == website) &&
+            (identical(other.category, category) ||
+                other.category == category) &&
             (identical(other.followersCount, followersCount) ||
                 other.followersCount == followersCount) &&
             (identical(other.followingCount, followingCount) ||
@@ -357,6 +392,8 @@ class _$UserModelImpl extends _UserModel {
     photoUrl,
     bio,
     type,
+    website,
+    category,
     followersCount,
     followingCount,
     totalEarnings,
@@ -383,6 +420,8 @@ abstract class _UserModel extends UserModel {
     final String? photoUrl,
     final String? bio,
     final AccountType type,
+    final String? website,
+    final String? category,
     final int followersCount,
     final int followingCount,
     final double totalEarnings,
@@ -406,6 +445,10 @@ abstract class _UserModel extends UserModel {
   String? get bio;
   @override
   AccountType get type;
+  @override
+  String? get website;
+  @override
+  String? get category;
   @override
   int get followersCount;
   @override

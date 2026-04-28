@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/services/storage_service.dart';
+import '../../../shared/widgets/verified_badge.dart';
 import '../../auth/presentation/auth_providers.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
@@ -20,6 +21,8 @@ class EditProfileScreen extends ConsumerStatefulWidget {
 class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   late final TextEditingController _displayNameController;
   late final TextEditingController _bioController;
+  late final TextEditingController _websiteController;
+  String? _category;
   final _picker = ImagePicker();
   final _storage = StorageService();
 
@@ -35,12 +38,15 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       text: user?.displayName ?? '',
     );
     _bioController = TextEditingController(text: user?.bio ?? '');
+    _websiteController = TextEditingController(text: user?.website ?? '');
+    _category = user?.category;
   }
 
   @override
   void dispose() {
     _displayNameController.dispose();
     _bioController.dispose();
+    _websiteController.dispose();
     super.dispose();
   }
 
@@ -61,10 +67,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             children: [
               ListTile(
                 leading: const Icon(Icons.photo_library_outlined),
-                title: Text(
-                  'Galería',
-                  style: GoogleFonts.inter(fontSize: 15),
-                ),
+                title: Text('Galería',
+                    style: GoogleFonts.inter(fontSize: 15)),
                 onTap: () {
                   Navigator.of(sheetCtx).pop();
                   _pick(ImageSource.gallery);
@@ -72,10 +76,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               ),
               ListTile(
                 leading: const Icon(Icons.photo_camera_outlined),
-                title: Text(
-                  'Cámara',
-                  style: GoogleFonts.inter(fontSize: 15),
-                ),
+                title: Text('Cámara',
+                    style: GoogleFonts.inter(fontSize: 15)),
                 onTap: () {
                   Navigator.of(sheetCtx).pop();
                   _pick(ImageSource.camera);
@@ -118,6 +120,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             displayName: _displayNameController.text,
             bio: _bioController.text,
             photoUrl: newPhotoUrl,
+            website: user.isBusiness ? _websiteController.text : null,
+            category: user.isBusiness ? _category : null,
           );
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
@@ -130,6 +134,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider).valueOrNull;
+    final isBusiness = user?.isBusiness ?? false;
 
     return Scaffold(
       backgroundColor: BelleColors.ivory,
@@ -225,7 +230,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           Padding(
             padding: const EdgeInsets.only(left: 4, bottom: 6),
             child: Text(
-              'NOMBRE',
+              isBusiness ? 'NOMBRE DE LA MARCA' : 'NOMBRE',
               style: Theme.of(context).textTheme.labelMedium,
             ),
           ),
@@ -243,7 +248,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           Padding(
             padding: const EdgeInsets.only(left: 4, bottom: 6),
             child: Text(
-              'BIO',
+              isBusiness ? 'DESCRIPCIÓN DE LA MARCA' : 'BIO',
               style: Theme.of(context).textTheme.labelMedium,
             ),
           ),
@@ -259,6 +264,52 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               hintText: 'Cuéntanos sobre ti',
             ),
           ),
+          if (isBusiness) ...[
+            const SizedBox(height: BelleSpacing.lg),
+            Padding(
+              padding: const EdgeInsets.only(left: 4, bottom: 6),
+              child: Text(
+                'SITIO WEB',
+                style: Theme.of(context).textTheme.labelMedium,
+              ),
+            ),
+            TextField(
+              controller: _websiteController,
+              keyboardType: TextInputType.url,
+              style: GoogleFonts.inter(
+                fontSize: 15,
+                color: BelleColors.charcoal,
+              ),
+              decoration: const InputDecoration(
+                hintText: 'https://...',
+                prefixIcon: Icon(Icons.link, size: 20),
+              ),
+            ),
+            const SizedBox(height: BelleSpacing.lg),
+            Padding(
+              padding: const EdgeInsets.only(left: 4, bottom: 6),
+              child: Text(
+                'CATEGORÍA',
+                style: Theme.of(context).textTheme.labelMedium,
+              ),
+            ),
+            DropdownButtonFormField<String>(
+              initialValue: _category,
+              items: BusinessCategories.all
+                  .map((c) =>
+                      DropdownMenuItem(value: c, child: Text(c)))
+                  .toList(),
+              onChanged: (v) => setState(() => _category = v),
+              style: GoogleFonts.inter(
+                fontSize: 15,
+                color: BelleColors.charcoal,
+              ),
+              decoration: const InputDecoration(
+                hintText: 'Categoría',
+                prefixIcon: Icon(Icons.label_outline, size: 20),
+              ),
+            ),
+          ],
           if (_error != null) ...[
             const SizedBox(height: BelleSpacing.md),
             Text(
