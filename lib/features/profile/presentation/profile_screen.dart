@@ -6,198 +6,307 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../auth/domain/user_model.dart';
 import '../../auth/presentation/auth_providers.dart';
 import '../../feed/presentation/feed_providers.dart';
+import 'profile_providers.dart';
+import 'widgets/follow_button.dart';
 
+/// Pantalla de perfil. Si [userId] es null o coincide con el usuario actual,
+/// muestra controles de auto-perfil (editar / cerrar sesión / ganancias).
+/// Si es otro usuario, muestra "Seguir/Siguiendo".
 class ProfileScreen extends ConsumerWidget {
-  const ProfileScreen({super.key});
+  const ProfileScreen({super.key, this.userId});
+
+  final String? userId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final userAsync = ref.watch(currentUserProvider);
+    final me = ref.watch(currentUserProvider).valueOrNull;
+    final isOwn = userId == null || userId == me?.uid;
 
-    return Scaffold(
-      backgroundColor: BelleColors.ivory,
-      appBar: AppBar(
-        title: const Text('PERFIL'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, size: 20),
-            tooltip: 'Cerrar sesión',
-            onPressed: () => ref.read(authRepositoryProvider).signOut(),
+    if (isOwn) {
+      if (me == null) {
+        return const Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(strokeWidth: 1.2),
+            ),
           ),
-        ],
-      ),
-      body: userAsync.when(
-        loading: () => const Center(
+        );
+      }
+      return _ProfileBody(user: me, isOwn: true, ref: ref);
+    }
+
+    final userAsync = ref.watch(userByIdProvider(userId!));
+    return userAsync.when(
+      loading: () => const Scaffold(
+        body: Center(
           child: SizedBox(
             width: 22,
             height: 22,
             child: CircularProgressIndicator(strokeWidth: 1.2),
           ),
         ),
-        error: (e, _) => Center(child: Text('Error: $e')),
-        data: (user) {
-          if (user == null) return const SizedBox.shrink();
-          final postsAsync = ref.watch(userPostsProvider(user.uid));
+      ),
+      error: (e, _) => Scaffold(body: Center(child: Text('Error: $e'))),
+      data: (user) {
+        if (user == null) {
+          return const Scaffold(
+            body: Center(child: Text('Usuario no encontrado')),
+          );
+        }
+        return _ProfileBody(user: user, isOwn: false, ref: ref);
+      },
+    );
+  }
+}
 
-          return CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: BelleSpacing.lg,
-                    vertical: BelleSpacing.lg,
-                  ),
-                  child: Column(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(3),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: BelleColors.gold,
-                            width: 1.5,
-                          ),
-                        ),
-                        child: CircleAvatar(
-                          radius: 44,
-                          backgroundColor: BelleColors.rosePaleSoft,
-                          backgroundImage: user.photoUrl != null
-                              ? CachedNetworkImageProvider(user.photoUrl!)
-                              : null,
-                          child: user.photoUrl == null
-                              ? const Icon(
-                                  Icons.person_outline,
-                                  size: 40,
-                                  color: BelleColors.charcoalMuted,
-                                )
-                              : null,
-                        ),
-                      ),
-                      const SizedBox(height: BelleSpacing.md),
-                      Text(
-                        '@${user.username ?? '...'}',
-                        style: Theme.of(context).textTheme.headlineSmall,
-                      ),
-                      if (user.displayName != null) ...[
-                        const SizedBox(height: BelleSpacing.xs),
-                        Text(
-                          user.displayName!,
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            color: BelleColors.charcoalMuted,
-                          ),
-                        ),
-                      ],
-                      if (user.bio?.trim().isNotEmpty ?? false) ...[
-                        const SizedBox(height: BelleSpacing.sm),
-                        Text(
-                          user.bio!,
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            color: BelleColors.charcoal,
-                            height: 1.4,
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: BelleSpacing.lg),
-                      _Stats(
-                        followers: user.followersCount,
-                        following: user.followingCount,
-                        clicks: user.totalClicks,
-                        earnings: user.totalEarnings,
-                        onEarningsTap: () =>
-                            context.push(AppRoutes.earnings),
-                      ),
-                      const SizedBox(height: BelleSpacing.lg),
-                    ],
-                  ),
-                ),
+class _ProfileBody extends StatelessWidget {
+  const _ProfileBody({
+    required this.user,
+    required this.isOwn,
+    required this.ref,
+  });
+
+  final UserModel user;
+  final bool isOwn;
+  final WidgetRef ref;
+
+  @override
+  Widget build(BuildContext context) {
+    final postsAsync = ref.watch(userPostsProvider(user.uid));
+
+    return Scaffold(
+      backgroundColor: BelleColors.ivory,
+      appBar: AppBar(
+        leading: isOwn
+            ? null
+            : IconButton(
+                icon: const Icon(Icons.arrow_back, size: 22),
+                onPressed: () => Navigator.of(context).maybePop(),
               ),
-              postsAsync.when(
-                loading: () => const SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.all(BelleSpacing.xl),
-                    child: Center(
-                      child: SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 1.2),
+        title: Text(isOwn ? 'PERFIL' : '@${user.username ?? ""}'),
+        actions: isOwn
+            ? [
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined, size: 20),
+                  tooltip: 'Editar perfil',
+                  onPressed: () =>
+                      context.push(AppRoutes.editProfile),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.logout, size: 20),
+                  tooltip: 'Cerrar sesión',
+                  onPressed: () =>
+                      ref.read(authRepositoryProvider).signOut(),
+                ),
+              ]
+            : null,
+      ),
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: BelleSpacing.lg,
+                vertical: BelleSpacing.lg,
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: BelleColors.gold,
+                        width: 1.5,
                       ),
                     ),
+                    child: CircleAvatar(
+                      radius: 44,
+                      backgroundColor: BelleColors.rosePaleSoft,
+                      backgroundImage: user.photoUrl != null
+                          ? CachedNetworkImageProvider(user.photoUrl!)
+                          : null,
+                      child: user.photoUrl == null
+                          ? const Icon(
+                              Icons.person_outline,
+                              size: 40,
+                              color: BelleColors.charcoalMuted,
+                            )
+                          : null,
+                    ),
                   ),
-                ),
-                error: (e, _) => SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.all(BelleSpacing.lg),
-                    child: Text(
-                      'Error cargando posts: $e',
+                  const SizedBox(height: BelleSpacing.md),
+                  Text(
+                    '@${user.username ?? '...'}',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  if (user.displayName != null) ...[
+                    const SizedBox(height: BelleSpacing.xs),
+                    Text(
+                      user.displayName!,
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: BelleColors.charcoalMuted,
+                      ),
+                    ),
+                  ],
+                  if (user.bio?.trim().isNotEmpty ?? false) ...[
+                    const SizedBox(height: BelleSpacing.sm),
+                    Text(
+                      user.bio!,
                       textAlign: TextAlign.center,
                       style: GoogleFonts.inter(
-                        color: BelleColors.charcoalMuted,
-                        fontSize: 13,
+                        fontSize: 14,
+                        color: BelleColors.charcoal,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: BelleSpacing.lg),
+                  _Stats(
+                    followers: user.followersCount,
+                    following: user.followingCount,
+                    clicks: user.totalClicks,
+                    onClicksTap: isOwn
+                        ? () => context.push(AppRoutes.earnings)
+                        : null,
+                  ),
+                  if (!isOwn) ...[
+                    const SizedBox(height: BelleSpacing.lg),
+                    FollowButton(targetUid: user.uid),
+                  ],
+                  const SizedBox(height: BelleSpacing.lg),
+                ],
+              ),
+            ),
+          ),
+          postsAsync.when(
+            loading: () => const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.all(BelleSpacing.xl),
+                child: Center(
+                  child: SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 1.2),
+                  ),
+                ),
+              ),
+            ),
+            error: (e, _) => SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(BelleSpacing.lg),
+                child: Text(
+                  'Error cargando posts: $e',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    color: BelleColors.charcoalMuted,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ),
+            data: (posts) {
+              if (posts.isEmpty) {
+                return SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(BelleSpacing.xl),
+                    child: Center(
+                      child: Text(
+                        isOwn
+                            ? 'Aún no has publicado outfits'
+                            : 'Sin posts publicados',
+                        style: GoogleFonts.inter(
+                          color: BelleColors.charcoalMuted,
+                          fontSize: 14,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                data: (posts) {
-                  if (posts.isEmpty) {
-                    return SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.all(BelleSpacing.xl),
-                        child: Center(
-                          child: Text(
-                            'Aún no has publicado outfits',
-                            style: GoogleFonts.inter(
-                              color: BelleColors.charcoalMuted,
-                              fontSize: 14,
+                );
+              }
+              return SliverPadding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: BelleSpacing.xs),
+                sliver: SliverGrid(
+                  gridDelegate:
+                      const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    mainAxisSpacing: 2,
+                    crossAxisSpacing: 2,
+                  ),
+                  delegate: SliverChildBuilderDelegate(
+                    (context, i) {
+                      final post = posts[i];
+                      return GestureDetector(
+                        onLongPress: isOwn
+                            ? () => _confirmDelete(context, post.id)
+                            : null,
+                        child: AspectRatio(
+                          aspectRatio: 1,
+                          child: CachedNetworkImage(
+                            imageUrl: post.mediaUrl,
+                            fit: BoxFit.cover,
+                            placeholder: (_, __) => Container(
+                              color: BelleColors.ivoryDeep,
                             ),
                           ),
                         ),
-                      ),
-                    );
-                  }
-                  return SliverPadding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: BelleSpacing.xs,
-                    ),
-                    sliver: SliverGrid(
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        mainAxisSpacing: 2,
-                        crossAxisSpacing: 2,
-                      ),
-                      delegate: SliverChildBuilderDelegate(
-                        (context, i) {
-                          final post = posts[i];
-                          return AspectRatio(
-                            aspectRatio: 1,
-                            child: CachedNetworkImage(
-                              imageUrl: post.mediaUrl,
-                              fit: BoxFit.cover,
-                              placeholder: (_, __) => Container(
-                                color: BelleColors.ivoryDeep,
-                              ),
-                            ),
-                          );
-                        },
-                        childCount: posts.length,
-                      ),
-                    ),
-                  );
-                },
-              ),
-              const SliverToBoxAdapter(
-                child: SizedBox(height: BelleSpacing.xxl),
-              ),
-            ],
-          );
-        },
+                      );
+                    },
+                    childCount: posts.length,
+                  ),
+                ),
+              );
+            },
+          ),
+          const SliverToBoxAdapter(
+            child: SizedBox(height: BelleSpacing.xxl),
+          ),
+        ],
       ),
     );
+  }
+
+  Future<void> _confirmDelete(BuildContext context, String postId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: BelleColors.ivory,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(BelleRadii.card),
+        ),
+        title: const Text('Eliminar post'),
+        content: const Text('Esta acción no se puede deshacer.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text(
+              'ELIMINAR',
+              style: TextStyle(color: BelleColors.danger),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+    try {
+      await ref.read(postRepositoryProvider).deletePost(
+            postId: postId,
+            userId: user.uid,
+          );
+      ref.invalidate(feedNotifierProvider);
+    } catch (_) {}
   }
 }
 
@@ -206,15 +315,13 @@ class _Stats extends StatelessWidget {
     required this.followers,
     required this.following,
     required this.clicks,
-    required this.earnings,
-    required this.onEarningsTap,
+    this.onClicksTap,
   });
 
   final int followers;
   final int following;
   final int clicks;
-  final double earnings;
-  final VoidCallback onEarningsTap;
+  final VoidCallback? onClicksTap;
 
   @override
   Widget build(BuildContext context) {
@@ -228,8 +335,8 @@ class _Stats extends StatelessWidget {
         _StatCell(
           value: '$clicks',
           label: 'CLICKS',
-          onTap: onEarningsTap,
-          highlighted: true,
+          onTap: onClicksTap,
+          highlighted: onClicksTap != null,
         ),
       ],
     );

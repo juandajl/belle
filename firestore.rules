@@ -35,6 +35,20 @@ service cloud.firestore {
             .hasOnly(['totalClicks', 'totalEarnings',
                       'followersCount', 'followingCount']))
       );
+
+      // /users/{userId}/following/{otherId}: el dueño define a quién sigue.
+      match /following/{otherId} {
+        allow read: if isSignedIn();
+        allow create, delete: if isOwner(userId);
+      }
+
+      // /users/{userId}/followers/{followerId}: el follower agrega su propio
+      // doc cuando empieza a seguir al usuario.
+      match /followers/{followerId} {
+        allow read: if isSignedIn();
+        allow create, delete: if isSignedIn()
+                              && request.auth.uid == followerId;
+      }
     }
 
     // Posts -------------------------------------------------------------

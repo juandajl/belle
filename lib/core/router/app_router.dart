@@ -7,6 +7,8 @@ import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/onboarding_screen.dart';
 import '../../features/auth/presentation/splash_screen.dart';
 import '../../features/feed/presentation/main_shell.dart';
+import '../../features/profile/presentation/edit_profile_screen.dart';
+import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/referrals/presentation/earnings_screen.dart';
 
 class AppRoutes {
@@ -15,6 +17,8 @@ class AppRoutes {
   static const onboarding = '/onboarding';
   static const home = '/';
   static const earnings = '/earnings';
+  static const editProfile = '/edit-profile';
+  static String userProfile(String uid) => '/profile/$uid';
 }
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -82,6 +86,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.earnings,
         builder: (_, __) => const EarningsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.editProfile,
+        builder: (_, __) => const EditProfileScreen(),
+      ),
+      GoRoute(
+        path: '/profile/:uid',
+        builder: (_, state) =>
+            ProfileScreen(userId: state.pathParameters['uid']),
       ),
     ],
   );

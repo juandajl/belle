@@ -134,6 +134,24 @@ class AuthRepository {
     return query.docs.isEmpty;
   }
 
+  Future<void> updateProfile({
+    required String uid,
+    String? displayName,
+    String? bio,
+  }) async {
+    final updates = <String, dynamic>{};
+    if (displayName != null) {
+      updates['displayName'] = displayName.trim().isEmpty
+          ? null
+          : displayName.trim();
+    }
+    if (bio != null) {
+      updates['bio'] = bio.trim().isEmpty ? null : bio.trim();
+    }
+    if (updates.isEmpty) return;
+    await _usersCol.doc(uid).update(updates);
+  }
+
   String _mapAuthError(FirebaseAuthException e) {
     switch (e.code) {
       case 'invalid-email':

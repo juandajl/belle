@@ -74,6 +74,33 @@ class PostRepository {
     );
   }
 
+  /// Feed filtrado por los usuarios que sigue [followingIds]. Limitado a 30
+  /// IDs por la restricción de `whereIn` de Firestore — si el usuario sigue
+  /// más, mostramos los 30 más recientes.
+  Future<FeedPage> fetchFollowingFeed({
+    required List<String> followingIds,
+    int limit = 12,
+    DocumentSnapshot<Map<String, dynamic>>? startAfter,
+  }) async {
+    if (followingIds.isEmpty) {
+      return (posts: <PostModel>[], lastDoc: null);
+    }
+    final ids = followingIds.take(30).toList();
+    Query<Map<String, dynamic>> query = _postsCol
+        .where('userId', whereIn: ids)
+        .orderBy('createdAt', descending: true)
+        .limit(limit);
+    if (startAfter != null) {
+      query = query.startAfterDocument(startAfter);
+    }
+    final snap = await query.get();
+    final posts = snap.docs.map(PostModel.fromFirestore).toList();
+    return (
+      posts: posts,
+      lastDoc: snap.docs.isEmpty ? null : snap.docs.last,
+    );
+  }
+
   Stream<List<PostModel>> watchUserPosts(String userId, {int limit = 30}) {
     return _postsCol
         .where('userId', isEqualTo: userId)

@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../auth/presentation/auth_providers.dart';
+import '../../profile/presentation/profile_providers.dart';
 import '../data/post_repository.dart';
 import '../domain/post_model.dart';
 
@@ -70,6 +71,18 @@ class FeedNotifier extends AsyncNotifier<List<PostModel>> {
 final userPostsProvider =
     StreamProvider.family<List<PostModel>, String>((ref, userId) {
   return ref.watch(postRepositoryProvider).watchUserPosts(userId);
+});
+
+/// Feed filtrado por la gente que el usuario actual sigue.
+/// Versión simple sin paginación — lista los últimos 30 posts entre los
+/// 30 primeros usuarios seguidos. Suficiente para MVP.
+final followingFeedProvider = FutureProvider<List<PostModel>>((ref) async {
+  final ids = ref.watch(myFollowingIdsProvider).valueOrNull ?? const [];
+  if (ids.isEmpty) return const [];
+  final result = await ref
+      .watch(postRepositoryProvider)
+      .fetchFollowingFeed(followingIds: ids, limit: 30);
+  return result.posts;
 });
 
 /// Stream del documento del post — refleja contadores en vivo.
